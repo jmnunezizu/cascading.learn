@@ -1,6 +1,7 @@
 package fr.xebia.cascading.learn.level1;
 
 import cascading.flow.FlowDef;
+import cascading.pipe.Pipe;
 import cascading.pipe.assembly.Discard;
 import cascading.pipe.assembly.Rename;
 import cascading.pipe.assembly.Retain;
@@ -25,7 +26,12 @@ public class BasicSchemaManipulation {
      * @see http://docs.cascading.org/cascading/3.0/userguide/ch17-subassemblies.html#discard
      */
     public static FlowDef discardField(Tap<?, ?, ?> source, Tap<?, ?, ?> sink) {
-        return null;
+        Pipe pipe = new Pipe("discardField");
+        pipe = new Discard(pipe, new Fields("discardme"));
+        return FlowDef.flowDef()
+            .addSource(pipe, source)
+            .addTail(pipe)
+            .addSink(pipe, sink);
     }
 
     /**
@@ -36,7 +42,12 @@ public class BasicSchemaManipulation {
      * @see http://docs.cascading.org/cascading/3.0/userguide/ch17-subassemblies.html#retain
      */
     public static FlowDef retainField(Tap<?, ?, ?> source, Tap<?, ?, ?> sink) {
-        return null;
+        Pipe pipe = new Pipe("retainField");
+        pipe = new Retain(pipe, new Fields("line"));
+        return FlowDef.flowDef()
+            .addSource(pipe, source)
+            .addTail(pipe)
+            .addSink(pipe, sink);
     }
 
     /**
@@ -48,7 +59,14 @@ public class BasicSchemaManipulation {
      * @see http://docs.cascading.org/cascading/3.0/userguide/ch17-subassemblies.html#rename
      */
     public static FlowDef renameField(Tap<?, ?, ?> source, Tap<?, ?, ?> sink) {
-        return null;
+        Pipe pipe = new Pipe("renameField");
+        pipe = new Rename(pipe, new Fields("renameme"), new Fields("line"));
+
+        return FlowDef.flowDef()
+            .addSource(pipe, source)
+            .addTail(pipe)
+            .addSink(pipe, sink);
+
     }
 
 }
