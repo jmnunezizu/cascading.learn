@@ -1,6 +1,7 @@
 package fr.xebia.cascading.learn.level2;
 
 import cascading.flow.FlowDef;
+import cascading.flow.planner.iso.expression.Expression;
 import cascading.operation.Filter;
 import cascading.operation.Function;
 import cascading.operation.expression.ExpressionFilter;
@@ -26,7 +27,15 @@ public class Mapping {
 	 * @see http://docs.cascading.org/cascading/3.0/userguide/ch05-pipe-assemblies.html#each-every
 	 */
 	public static FlowDef filterWithExpression(Tap<?, ?, ?> source, Tap<?, ?, ?> sink) {
-		return null;
+		Pipe pipe = new Pipe("filterWithExpression");
+		ExpressionFilter function = new ExpressionFilter("!line.toLowerCase().contains(\"hadoop\")", String.class);
+		pipe = new Each(pipe, new Fields("line"), function);
+
+		return FlowDef.flowDef()
+				.addSource(pipe, source)
+				.addTail(pipe)
+				.addSink(pipe, sink);
+
 	}
 	
 	/**
@@ -40,7 +49,14 @@ public class Mapping {
 	 * @see http://docs.cascading.org/cascading/3.0/userguide/ch05-pipe-assemblies.html#each-every
 	 */
 	public static FlowDef transformWithExpression(Tap<?, ?, ?> source, Tap<?, ?, ?> sink) {
-		return null;
+		Pipe pipe = new Pipe("transformWithExpression");
+		ExpressionFunction fn = new ExpressionFunction(new Fields("line"), "line.toLowerCase()", String.class);
+		pipe = new Each(pipe, fn);
+
+		return FlowDef.flowDef()
+				.addSource(pipe, source)
+				.addTail(pipe)
+				.addSink(pipe, sink);
 	}
 	
 	/**

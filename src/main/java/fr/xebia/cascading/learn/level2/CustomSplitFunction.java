@@ -15,12 +15,12 @@ public class CustomSplitFunction<Context> extends BaseOperation<Context> impleme
 	}
 
 	@Override
-	public void operate(@SuppressWarnings("rawtypes") FlowProcess flowProcess,
-			FunctionCall<Context> functionCall) {
+	public void operate(@SuppressWarnings("rawtypes") FlowProcess flowProcess, FunctionCall<Context> functionCall) {
 		String line = functionCall.getArguments().getString(0);
-		String word = line; // or not ?
-		functionCall.getOutputCollector().add(new Tuple(word));
-		functionCall.getOutputCollector().add(new Tuple(word));
+		String[] words = line.split("\\s");
+		for (String word : words) {
+			functionCall.getOutputCollector().add(new Tuple(word));
+		}
 	}
 	
 }
