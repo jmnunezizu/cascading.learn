@@ -97,14 +97,13 @@ public class FreestyleJobs {
 	public static FlowDef computeTfIdf(Tap<?, ?, ?> source, Tap<?, ?, ?> sink) {
 		Pipe pipe = new Pipe("tf-idf");
 
-		final Fields content = new Fields("content");
-		final Fields lowercaseLine = new Fields("lowercaseLine");
 		final Fields id = new Fields("id");
-		final Fields token = new Fields("token");
+		final Fields lowercaseLine = new Fields("lowercaseLine");
 		final Fields rawToken = new Fields("raw_token");
+		final Fields token = new Fields("token");
 
 		ExpressionFunction toLowerCaseFn = new ExpressionFunction(lowercaseLine, "content.toLowerCase().trim()", String.class);
-		pipe = new Each(pipe, content, toLowerCaseFn, Fields.join(id, lowercaseLine));
+		pipe = new Each(pipe, new Fields("content"), toLowerCaseFn, Fields.join(id, lowercaseLine));
 
 		RegexSplitGenerator splitter = new RegexSplitGenerator(rawToken, "[/'\\s]");
 		pipe = new Each(pipe, lowercaseLine, splitter, Fields.join(id, rawToken));
