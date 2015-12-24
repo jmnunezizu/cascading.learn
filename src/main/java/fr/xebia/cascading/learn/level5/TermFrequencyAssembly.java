@@ -8,6 +8,7 @@ import cascading.pipe.SubAssembly;
 import cascading.pipe.assembly.CountBy;
 import cascading.pipe.assembly.Discard;
 import cascading.pipe.assembly.Rename;
+import cascading.pipe.assembly.Retain;
 import cascading.tuple.Fields;
 
 public class TermFrequencyAssembly extends SubAssembly {
@@ -31,7 +32,7 @@ public class TermFrequencyAssembly extends SubAssembly {
 
     // calculate tf
     ExpressionFunction tfExpression = new ExpressionFunction(TF, "(double) tf_count / tf_max", Double.class);
-    Fields tfArguments = new Fields("tf_count", "tf_max");
+    Fields tfArguments = Fields.join(TF_COUNT, MaxTermFrequencyAssembly.MAX_TF);
     tfPipe = new Each(tfPipe, tfArguments, tfExpression, Fields.ALL);
 
     setTails(tfPipe);

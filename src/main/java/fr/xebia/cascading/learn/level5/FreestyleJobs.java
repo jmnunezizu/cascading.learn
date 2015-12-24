@@ -101,21 +101,17 @@ public class FreestyleJobs {
 		final Fields lowercaseLine = new Fields("lowercaseLine");
 		final Fields id = new Fields("id");
 		final Fields token = new Fields("token");
-		final Fields tokens = new Fields("tokens");
-		final Fields idAndToken = Fields.join(id, token);
-		final Fields expectedFields = new Fields("docId", "tfidf", "word");
+		final Fields rawToken = new Fields("raw_token");
 
-		// convert to lowercase
 		ExpressionFunction toLowerCaseFn = new ExpressionFunction(lowercaseLine, "content.toLowerCase().trim()", String.class);
-		pipe = new Each(pipe, content, toLowerCaseFn, Fields.ALL);
+		pipe = new Each(pipe, content, toLowerCaseFn, Fields.join(id, lowercaseLine));
 
-		// split into words
-		RegexSplitGenerator splitter = new RegexSplitGenerator(tokens, "[/'\\s]");
-		pipe = new Each(pipe, lowercaseLine, splitter, Fields.ALL);
+		RegexSplitGenerator splitter = new RegexSplitGenerator(rawToken, "[/'\\s]");
+		pipe = new Each(pipe, lowercaseLine, splitter, Fields.join(id, rawToken));
 
 		// sanitise words
 		RegexReplace sanitiseFn = new RegexReplace(token, "[^a-zA-Z-]+", "");
-		pipe = new Each(pipe, tokens, sanitiseFn, idAndToken);
+		pipe = new Each(pipe, rawToken, sanitiseFn, Fields.join(id, token));
 
 		// -----
 
@@ -124,15 +120,16 @@ public class FreestyleJobs {
 
 		// the IDF side of the join is smaller, so it goes on the RHS
 		Pipe tfidfPipe = new CoGroup(tfPipe, TermFrequencyAssembly.TF_TOKEN, idfPipe, InverseDocumentFrequencyAssembly.DF_TOKEN);
+
 		final Fields tfidf = new Fields("tfidf");
-		ExpressionFunction tfidfExpression = new ExpressionFunction(tfidf, "(double) tf * Math.log((double) n_docs / (df_count))", Double.class);
-		Fields tfidfArguments = new Fields("tf_count", "df_count", "n_docs", "tf");
-		tfidfPipe = new Each(tfidfPipe, tfidfArguments, tfidfExpression, Fields.ALL);
+		ExpressionFunction tfidfExpression = new ExpressionFunction(tfidf, "(double) tf * idf", Double.class);
+		Fields tfidfArguments = Fields.join(TermFrequencyAssembly.TF, InverseDocumentFrequencyAssembly.IDF);
+		Fields tfidOutput = Fields.join(id, TermFrequencyAssembly.TF_TOKEN, tfidf);
+		tfidfPipe = new Each(tfidfPipe, tfidfArguments, tfidfExpression, tfidOutput);
 
 		// filter and clean up
-		tfidfPipe = new Retain(tfidfPipe, Fields.join(id, TermFrequencyAssembly.TF_TOKEN, tfidf));
 		tfidfPipe = new Each(tfidfPipe, tfidf, new ExpressionFilter("tfidf < 0.1", Double.class));
-		tfidfPipe = new Rename(tfidfPipe, Fields.join(id, tfidf, TermFrequencyAssembly.TF_TOKEN), expectedFields);
+		tfidfPipe = new Rename(tfidfPipe, Fields.join(id, tfidf, TermFrequencyAssembly.TF_TOKEN), new Fields("docId", "tfidf", "word"));
 
 		// sort by docId
 		tfidfPipe = new GroupBy(tfidfPipe, Fields.ALL, Fields.ALL, true);

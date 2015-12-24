@@ -1,6 +1,7 @@
 package fr.xebia.cascading.learn.level5;
 
 import cascading.operation.Insert;
+import cascading.operation.expression.ExpressionFunction;
 import cascading.pipe.Each;
 import cascading.pipe.HashJoin;
 import cascading.pipe.Pipe;
@@ -17,6 +18,7 @@ public class InverseDocumentFrequencyAssembly extends SubAssembly {
 
   public static final Fields DF_TOKEN = new Fields("df_token");
   public static final Fields DF_COUNT = new Fields("df_count");
+  public static final Fields IDF = new Fields("idf");
 
   public InverseDocumentFrequencyAssembly(final Pipe previous, final Fields docIdField, final Fields tokenField) {
     super(previous);
@@ -32,9 +34,13 @@ public class InverseDocumentFrequencyAssembly extends SubAssembly {
     dfPipe = new Rename(dfPipe, tokenField, DF_TOKEN);
     dfPipe = new Each(dfPipe, new Insert(LHS_JOIN, 1), Fields.ALL);
 
-
     // join DF and D
     idfPipe = new HashJoin(dfPipe, LHS_JOIN, dPipe, RHS_JOIN);
+
+    // calculate idf
+    ExpressionFunction idfFn = new ExpressionFunction(IDF, "Math.log((double) n_docs / (df_count))", Double.class);
+    Fields idfArguments = new Fields("n_docs", "df_count");
+    idfPipe = new Each(idfPipe, idfArguments, idfFn, Fields.ALL);
 
     setTails(idfPipe);
   }
